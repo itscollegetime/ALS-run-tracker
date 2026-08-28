@@ -476,18 +476,41 @@ function updateDonationUI(raised, goal) {
 if (isAdmin) {
     const adminDiv = document.createElement("div");
     adminDiv.id = "admin-panel";
-    adminDiv.style.cssText = "position:fixed; bottom:20px; right:20px; z-index:9999; background:#fff; padding:15px; border:2px solid red; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.2); display:flex; flex-direction:column; gap:8px;";
+    adminDiv.style.cssText = "position:fixed; bottom:20px; right:20px; z-index:9999; background:#fff; padding:15px; border:2px solid red; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.2); display:flex; flex-direction:column; gap:8px; max-width:220px;";
+    
     adminDiv.innerHTML = `
-		<h4 style="margin:0; color:red;">Admin Mode</h4>
-		<button id="start-btn" style="background:#28a745; color:white; padding:8px 12px; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">🚀 Start Run</button>
-		<button id="export-btn" style="background:#17a2b8; color:white; padding:8px 12px; border:none; border-radius:4px; cursor:pointer;">💾 Export Run Data</button>
-		<button id="load-btn" style="background:#6f42c1; color:white; padding:8px 12px; border:none; border-radius:4px; cursor:pointer;">📂 Load Run Data</button>
-		<input type="file" id="load-file-input" accept=".json" style="display:none;" />
-		<button id="toggle-wpt-btn" style="background:#0066cc; color:white; padding:8px 12px; border:none; border-radius:4px; cursor:pointer;">📍 Toggle Map Waypoints</button>
-		<button id="reset-btn" style="background:#dc3545; color:white; padding:8px 12px; border:none; border-radius:4px; cursor:pointer;">⚠️ Reset Run Progress</button>
+		<div style="display:flex; justify-content:space-between; align-items:center;">
+			<h4 style="margin:0; color:red;">Admin Panel</h4>
+			<button id="toggle-panel-btn" style="background:none; border:none; cursor:pointer; font-size:1rem; font-weight:bold; color:#333; padding:0 4px;">−</button>
+		</div>
+		<div id="admin-panel-content" style="display:flex; flex-direction:column; gap:8px;">
+			<button id="start-btn" style="background:#28a745; color:white; padding:8px 12px; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">🚀 Start Run</button>
+			<button id="export-btn" style="background:#17a2b8; color:white; padding:8px 12px; border:none; border-radius:4px; cursor:pointer;">💾 Export Run Data</button>
+			<button id="load-btn" style="background:#6f42c1; color:white; padding:8px 12px; border:none; border-radius:4px; cursor:pointer;">📂 Load Run Data</button>
+			<input type="file" id="load-file-input" accept=".json" style="display:none;" />
+			<button id="toggle-wpt-btn" style="background:#0066cc; color:white; padding:8px 12px; border:none; border-radius:4px; cursor:pointer;">📍 Toggle Map Waypoints</button>
+			<button id="reset-btn" style="background:#dc3545; color:white; padding:8px 12px; border:none; border-radius:4px; cursor:pointer;">⚠️ Reset Run Progress</button>
+		</div>
 	`;
     document.body.appendChild(adminDiv);
 
+    // Toggle Collapse / Expand Functionality
+    const togglePanelBtn = document.getElementById("toggle-panel-btn");
+    const panelContent = document.getElementById("admin-panel-content");
+    let isCollapsed = false;
+
+    togglePanelBtn.addEventListener("click", () => {
+        isCollapsed = !isCollapsed;
+        if (isCollapsed) {
+            panelContent.style.display = "none";
+            togglePanelBtn.innerText = "+";
+        } else {
+            panelContent.style.display = "flex";
+            togglePanelBtn.innerText = "−";
+        }
+    });
+
+    // Event Listeners for Action Buttons
     document.getElementById("start-btn").addEventListener("click", startRun);
     document.getElementById("reset-btn").addEventListener("click", resetRunProgress);
     document.getElementById("export-btn").addEventListener("click", exportRunData);
