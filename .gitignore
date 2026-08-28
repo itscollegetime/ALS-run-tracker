@@ -86,3 +86,5 @@ ui-debug.log*
 .DS_Store
 Thumbs.db
 .vscode/
+
+.exports/

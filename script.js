@@ -161,7 +161,7 @@ function renderWaypointsOnMap() {
 			fillOpacity: 0.9
 		});
 
-		marker.bindTooltip(`<b>#${wpt.order}: ${wpt.name}</b><br>${(wpt.distanceFromStartKm * 0.621371).toFixed(1)} mi`, {
+		marker.bindTooltip(`<b>#${wpt.order}: ${wpt.name.replace(" Checkpoint","")}</b><br>${(wpt.distanceFromStartKm * 0.621371).toFixed(1)} mi`, {
 			permanent: true,
 			direction: 'top',
 			offset: [0, -8],
@@ -362,6 +362,94 @@ async function resetRunProgress() {
     alert("Run progress reset to Not Yet Started.");
 }
 
+// Export Run Data (Progress, Waypoints, and Location Pings)
+async function exportRunData() {
+	try {
+		// 1. Fetch Progress State
+		const progressSnap = await getDocs(collection(firestore, "progress"));
+		const progressData = {};
+		progressSnap.forEach(docSnap => {
+			progressData[docSnap.id] = docSnap.data();
+		});
+
+		// 2. Fetch Waypoints State
+		const waypointsSnap = await getDocs(collection(firestore, "waypoints"));
+		const waypointsData = waypointsSnap.docs.map(docSnap => ({
+			id: docSnap.id,
+			...docSnap.data()
+		}));
+
+		// 3. Fetch Realtime Location Pings
+		const locSnapshot = await get(ref(realtimeDatabase, 'location'));
+		const locationData = locSnapshot.exists() ? locSnapshot.val() : {};
+
+		const exportPayload = {
+			exportedAt: new Date().toISOString(),
+			progress: progressData,
+			waypoints: waypointsData,
+			location: locationData
+		};
+
+		// Download as JSON file
+		const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportPayload, null, 2));
+		const downloadAnchor = document.createElement('a');
+		downloadAnchor.setAttribute("href", dataStr);
+		downloadAnchor.setAttribute("download", `run_export_${Temporal.Now.zonedDateTimeISO().toString().slice(0,10)}.json`);
+		document.body.appendChild(downloadAnchor);
+		downloadAnchor.click();
+		downloadAnchor.remove();
+	} catch (err) {
+		console.error("Export failed:", err);
+		alert("Failed to export run data.");
+	}
+}
+
+// Load Run Data from File
+async function loadRunData(event) {
+	const file = event.target.files[0];
+	if (!file) return;
+
+	if (!confirm("Loading a run file will OVERWRITE the current active run state and location history. Continue?")) {
+		event.target.value = "";
+		return;
+	}
+
+	const reader = new FileReader();
+	reader.onload = async (e) => {
+		try {
+			const data = JSON.parse(e.target.result);
+
+			// 1. Restore Progress Documents
+			if (data.progress) {
+				for (const [docId, docData] of Object.entries(data.progress)) {
+					await setDoc(doc(firestore, "progress", docId), docData);
+				}
+			}
+
+			// 2. Restore Waypoints
+			if (data.waypoints && Array.isArray(data.waypoints)) {
+				for (const wpt of data.waypoints) {
+					const { id, ...wptBody } = wpt;
+					await setDoc(doc(firestore, "waypoints", id), wptBody);
+				}
+			}
+
+			// 3. Restore Realtime Location Pings
+			if (data.location) {
+				await set(ref(realtimeDatabase, 'location'), data.location);
+			} else {
+				await remove(ref(realtimeDatabase, 'location'));
+			}
+
+			alert("Run data successfully loaded!");
+		} catch (err) {
+			console.error("Import failed:", err);
+			alert("Failed to parse or restore run file.");
+		}
+	};
+	reader.readAsText(file);
+}
+
 // 7. Fetch Donation Goal Progress (Cloud Function Proxy)
 async function fetchDonationProgress() {
 	const functionUrl = "https://us-central1-als-run.cloudfunctions.net/getDonations";
@@ -392,6 +480,9 @@ if (isAdmin) {
     adminDiv.innerHTML = `
 		<h4 style="margin:0; color:red;">Admin Mode</h4>
 		<button id="start-btn" style="background:#28a745; color:white; padding:8px 12px; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">🚀 Start Run</button>
+		<button id="export-btn" style="background:#17a2b8; color:white; padding:8px 12px; border:none; border-radius:4px; cursor:pointer;">💾 Export Run Data</button>
+		<button id="load-btn" style="background:#6f42c1; color:white; padding:8px 12px; border:none; border-radius:4px; cursor:pointer;">📂 Load Run Data</button>
+		<input type="file" id="load-file-input" accept=".json" style="display:none;" />
 		<button id="toggle-wpt-btn" style="background:#0066cc; color:white; padding:8px 12px; border:none; border-radius:4px; cursor:pointer;">📍 Toggle Map Waypoints</button>
 		<button id="reset-btn" style="background:#dc3545; color:white; padding:8px 12px; border:none; border-radius:4px; cursor:pointer;">⚠️ Reset Run Progress</button>
 	`;
@@ -399,6 +490,12 @@ if (isAdmin) {
 
     document.getElementById("start-btn").addEventListener("click", startRun);
     document.getElementById("reset-btn").addEventListener("click", resetRunProgress);
+    document.getElementById("export-btn").addEventListener("click", exportRunData);
+    
+    const fileInput = document.getElementById("load-file-input");
+    document.getElementById("load-btn").addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", loadRunData);
+
     document.getElementById("toggle-wpt-btn").addEventListener("click", () => {
     	showWaypointsOnMap = !showWaypointsOnMap;
     	renderWaypointsOnMap();
