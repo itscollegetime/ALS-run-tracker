@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>ALS Run Tracker</title>
+
+	<!-- Leaflet CSS -->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+	<link rel="stylesheet" href="style.css" />
+
+	<!-- Leaflet JS -->
+	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+	<script type="module" src="script.js"></script>
+	<script type="module" src="waypoint-upload.js"></script>
+</head>
+<body>
+	<div class="tracker-container">
+		<header class="header">
+			<h1>ALS 50-Mile Run Tracker</h1>
+		</header>
+
+		<!-- Top Section: Run Timer, Progress Bars, and QR Code side-by-side -->
+		<section class="dashboard">
+			<!-- Timer Card -->
+			<div class="card timer-card">
+				<h2>RUN DURATION</h2>
+				<div id="run-timer" class="timer-display">00:00:00</div>
+				<p class="timer-status" id="timer-status">Waiting for start...</p>
+			</div>
+
+			<!-- Progress Bars Card -->
+			<div class="card progress-card">
+				<!-- Distance Progress -->
+				<div class="progress-section">
+					<div class="progress-label">
+						<span>Distance Covered</span>
+						<span id="distance-text">0.0 / 50.0 miles</span>
+					</div>
+					<div class="progress-bar-container">
+						<div id="distance-bar" class="progress-bar fill-distance" style="width: 0%;"></div>
+					</div>
+				</div>
+
+				<!-- Fundraising Progress -->
+				<div class="progress-section">
+					<div class="progress-label">
+						<span>Fundraising Goal</span>
+						<span id="donation-text">$0 / $5,000</span>
+					</div>
+					<div class="progress-bar-container">
+						<div id="donation-bar" class="progress-bar fill-donation" style="width: 0%;"></div>
+					</div>
+				</div>
+			</div>
+			
+			<!-- Donate QR Card -->
+			<div class="card qr-section">
+				<h3>Donate Now</h3>
+				<img 
+					id="donate-qr-code" 
+					src="./run4acure-code.png" 
+					alt="Donate Now QR Code" 
+				/>
+				<p>Scan to support ALS Research</p>
+			</div>
+		</section>
+
+		<!-- Map Section -->
+		<section class="map-section">
+			<div id="map"></div>
+			<div class="coordinates-bar">
+				<span>Lat: <strong id="lat">Waiting...</strong></span>
+				<span>Lng: <strong id="lng">Waiting...</strong></span>
+			</div>
+		</section>
+
+		<!-- Waypoints List (Hidden by default, shown via script.js in admin mode) -->
+		<section id="waypoints-section" class="waypoints-section card" style="display: none;">
+			<h2>Checkpoints & Waypoints</h2>
+			<div id="waypoints-list" class="waypoints-grid">
+				<p class="loading">Loading waypoints...</p>
+			</div>
+		</section>
+	</div>
+</body>
+</html>
